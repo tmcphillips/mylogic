@@ -196,3 +196,56 @@
     └── syslib
     ```
 
+### Confirmed that Go demos work 
+
+- Manually cloned tmcphillips/go-demos repo into `~/go/src/github.com/tmcphillips/go-demos/` so that SSH protocol is used:
+	```
+	tmcphill@circe-win10:~/go/src/github.com/tmcphillips$ git clone git@github.com:tmcphillips/go-demos.git
+	Cloning into 'go-demos'...
+	remote: Enumerating objects: 8, done.
+	remote: Counting objects: 100% (8/8), done.
+	remote: Compressing objects: 100% (5/5), done.
+	remote: Total 236 (delta 1), reused 8 (delta 1), pack-reused 228
+	Receiving objects: 100% (236/236), 43.26 KiB | 0 bytes/s, done.
+	Resolving deltas: 100% (103/103), done.
+	
+	tmcphill@circe-win10:~/go/src/github.com/tmcphillips$ cd go-demos/
+	
+	tmcphill@circe-win10:~/go/src/github.com/tmcphillips/go-demos$ ls -l
+	total 0
+	drwxrwxrwx 1 tmcphill tmcphill 4096 Jul 22 21:07 00_hello_world
+	drwxrwxrwx 1 tmcphill tmcphill 4096 Jul 22 21:07 01_hello_with_args
+	drwxrwxrwx 1 tmcphill tmcphill 4096 Jul 22 21:07 02_hello_with_flags
+	drwxrwxrwx 1 tmcphill tmcphill 4096 Jul 22 21:07 03_hamming
+	drwxrwxrwx 1 tmcphill tmcphill 4096 Jul 22 21:07 04_hello_qt
+	drwxrwxrwx 1 tmcphill tmcphill 4096 Jul 22 21:07 05_hello_andlabs
+	drwxrwxrwx 1 tmcphill tmcphill 4096 Jul 22 21:07 06_hello_nk
+	drwxrwxrwx 1 tmcphill tmcphill 4096 Jul 22 21:07 07_hello_fyne
+	drwxrwxrwx 1 tmcphill tmcphill 4096 Jul 22 21:07 notes	
+	```
+
+- Successfully ran first demo and tests:
+	```terminal
+	tmcphill@circe-win10:~/go/src/github.com/tmcphillips/go-demos$ cd 00_hello_world/
+	
+	tmcphill@circe-win10:~/go/src/github.com/tmcphillips/go-demos/00_hello_world$ go run hello.go
+	Hello World
+	
+	tmcphill@circe-win10:~/go/src/github.com/tmcphillips/go-demos/00_hello_world$ go test
+	PASS
+	ok      github.com/tmcphillips/go-demos/00_hello_world  0.004s
+	```
+
+- Successfully ran hamming demo:
+	```terminal
+	tmcphill@circe-win10:~/go/src/github.com/tmcphillips/go-demos/00_hello_world$ cd ../03_hamming/
+	
+	tmcphill@circe-win10:~/go/src/github.com/tmcphillips/go-demos/03_hamming$ go run hamming.go
+	1, 2, 3, 4, 5, 6, 8, 9, 10, 12, 15, 16, 18, 20
+	```
+
+- Successfully ran Fyne demo, saw Fyne demo window appear on desktop:
+	```terminal
+	tmcphill@circe-win10:~/go/src/github.com/tmcphillips/go-demos/07_hello_fyne$ go run hello_fyne.go
+	```
+
