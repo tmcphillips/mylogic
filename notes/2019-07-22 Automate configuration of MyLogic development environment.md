@@ -249,3 +249,125 @@
 	tmcphill@circe-win10:~/go/src/github.com/tmcphillips/go-demos/07_hello_fyne$ go run hello_fyne.go
 	```
 
+### Exercised CGO with new demo
+
+- Created new demo directory and copied first demo to it:
+	```terminal
+	tmcphill@circe-win10:~/go/src/github.com/tmcphillips/go-demos$ mkdir 08_hello_cgo
+	tmcphill@circe-win10:~/go/src/github.com/tmcphillips/go-demos$ cd 08_hello_cgo/
+	$ cp ../00_hello_world/hello.go hello_cgo.go
+	```
+- Source code starts as pure Go:
+	```go
+	package main
+
+	import (
+		"fmt"
+	)
+
+	// Program that outputs a familiar greeting
+	func main() {
+		fmt.Println("Hello World")
+	}
+	```
+
+- Replaced `fmt.Println` with a call to a custom C function `write_message`:
+
+	```go
+	package main
+
+	/*
+	#include <stdio.h>
+	#include <stdlib.h>
+	void write_message(const char * message) {
+		printf("%s\n", message);
+	}
+	*/
+	import "C"
+	import "unsafe"
+
+	// Program that outputs a familiar greeting
+	func main() {
+		message := C.CString("Hello World from CGO!")
+		C.write_message(message)
+		C.free(unsafe.Pointer(message))
+	}
+	```
+
+- Confirmed that the program runs:
+	```terminal
+	tmcphill@circe-win10:~/go/src/github.com/tmcphillips/go-demos/08_hello_cgo$ go run hello_cgo.go
+	Hello World from CGO!
+	```
+
+### Investigated static linking of Go demos
+
+- Noted that executable for hello world demo is statically linked by default:
+
+    ```
+    tmcphill@circe-win10:~/go/src/github.com/tmcphillips/go-demos/00_hello_world$ go build
+
+    tmcphill@circe-win10:~/go/src/github.com/tmcphillips/go-demos/00_hello_world$ ls -al
+    total 6336
+    drwxrwxrwx 1 tmcphill tmcphill    4096 Jul 22 22:05 .
+    drwxrwxrwx 1 tmcphill tmcphill    4096 Jul 22 21:23 ..
+    -rwxrwxrwx 1 tmcphill tmcphill 1997487 Jul 22 22:05 00_hello_world
+    -rw-rw-rw- 1 tmcphill tmcphill     121 Jul 22 21:07 hello.go
+    -rw-rw-rw- 1 tmcphill tmcphill      74 Jul 22 21:07 hello_test.go
+
+    tmcphill@circe-win10:~/go/src/github.com/tmcphillips/go-demos/00_hello_world$ ./00_hello_world
+    Hello World
+
+    tmcphill@circe-win10:~/go/src/github.com/tmcphillips/go-demos/00_hello_world$ file ./00_hello_world
+    ./00_hello_world: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), statically linked, not stripped
+    ```
+- But the executable for the CGO demo is dynamically linked to four libraries:
+	```terminal
+	tmcphill@circe-win10:~/go/src/github.com/tmcphillips/go-demos/08_hello_cgo$ go build
+	
+	tmcphill@circe-win10:~/go/src/github.com/tmcphillips/go-demos/08_hello_cgo$ ls -al
+	total 1312
+	drwxrwxrwx 1 tmcphill tmcphill    4096 Jul 22 21:51 .
+	drwxrwxrwx 1 tmcphill tmcphill    4096 Jul 22 21:23 ..
+	-rwxrwxrwx 1 tmcphill tmcphill 1172792 Jul 22 22:11 08_hello_cgo
+	-rw-rw-rw- 1 tmcphill tmcphill     324 Jul 22 21:41 hello_cgo.go
+	
+	tmcphill@circe-win10:~/go/src/github.com/tmcphillips/go-demos/08_hello_cgo$ ./08_hello_cgo
+	Hello World from CGO!
+	
+	tmcphill@circe-win10:~/go/src/github.com/tmcphillips/go-demos/08_hello_cgo$ file 08_hello_cgo
+	08_hello_cgo: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, for GNU/Linux 2.6.32, BuildID[sha1]=a15d762cfa62c389fa48f313a62b22b8489ff726, not stripped
+
+	tmcphill@circe-win10:~/go/src/github.com/tmcphillips/go-demos/08_hello_cgo$ ldd 08_hello_cgo
+	        linux-vdso.so.1 (0x00007fffc0e70000)
+	        libpthread.so.0 => /lib/x86_64-linux-gnu/libpthread.so.0 (0x00007f4a662f0000)
+	        libc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x00007f4a65f50000)
+	        /lib64/ld-linux-x86-64.so.2 (0x00007f4a66600000)
+	```
+
+- Adding the linker flags `-linkmode external -extldflags -static` produces a static executable for the CGO example:
+	```
+	tmcphill@circe-win10:~/go/src/github.com/tmcphillips/go-demos/08_hello_cgo$ go build  -ldflags "-linkmode external -extldflags -static"
+	
+	tmcphill@circe-win10:~/go/src/github.com/tmcphillips/go-demos/08_hello_cgo$ ls -al
+	total 2192
+	drwxrwxrwx 1 tmcphill tmcphill    4096 Jul 22 22:21 .
+	drwxrwxrwx 1 tmcphill tmcphill    4096 Jul 22 21:23 ..
+	-rwxrwxrwx 1 tmcphill tmcphill 2193544 Jul 22 22:21 08_hello_cgo
+	-rw-rw-rw- 1 tmcphill tmcphill     324 Jul 22 21:41 hello_cgo.go
+	
+	tmcphill@circe-win10:~/go/src/github.com/tmcphillips/go-demos/08_hello_cgo$ ./08_hello_cgo
+	Hello World from CGO!
+
+	tmcphill@circe-win10:~/go/src/github.com/tmcphillips/go-demos/08_hello_cgo$ file 08_hello_cgo
+	08_hello_cgo: ELF 64-bit LSB executable, x86-64, version 1 (GNU/Linux), statically linked, for GNU/Linux 2.6.32, BuildID[sha1]=73560276a4e5e8dba548bcd279687304ff01d3db, not stripped
+	
+	tmcphill@circe-win10:~/go/src/github.com/tmcphillips/go-demos/08_hello_cgo$ ldd 08_hello_cgo
+        not a dynamic executable
+	```
+- The static executable is 2.2 MB vs 1.1 MB for the static binary.
+- Leaving off the `-linkmode external` linker option appears to give a static executable of the same size, but the binaries differ internally.
+
+
+
+ 
